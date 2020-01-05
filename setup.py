@@ -4,6 +4,10 @@ from setuptools import find_packages, setup
 
 from magnet2torrent import __version__
 
+def readme():
+    with open("README.md") as f:
+        return f.read()
+
 setup(
     name="magnet2torrent",
     version=__version__,
@@ -11,7 +15,8 @@ setup(
     author="Anders Jensen",
     author_email="johndoee@tridentstream.org",
     description="Turn a bittorrent magnet links into a .torrent file.",
-    long_description="TODO",
+    long_description=readme(),
+    long_description_content_type="text/markdown",
     license="MIT",
     packages=find_packages(),
     include_package_data=True,
