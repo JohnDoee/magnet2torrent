@@ -181,7 +181,7 @@ class BittorrentTCPProtocol(asyncio.Transport):
 
 
 async def fetch_from_peer(task_registry, ip, port, infohash):
-    loop = asyncio.get_running_loop()
+    loop = asyncio.get_event_loop()
     cb = loop.create_future()
     addr = (ip, port)
     try:

@@ -61,9 +61,10 @@ def main():
         app.add_routes(routes)
         web.run_app(app, host=str(args.ip), port=args.port)
     elif args.command == "fetch":
+        loop = asyncio.get_event_loop()
         m2t = Magnet2Torrent(args.magnet)
         try:
-            filename, torrent_data = asyncio.run(m2t.retrieve_torrent())
+            filename, torrent_data = loop.run_until_complete(m2t.retrieve_torrent())
         except FailedToFetchException:
             print("Unable to fetch magnet link")
             quit(1)
