@@ -5,7 +5,7 @@ import logging
 from urllib.parse import parse_qs, urlparse
 
 from . import settings
-from .bencode import bencode
+from .bencode import bencode, bdecode
 from .exceptions import FailedToFetchException
 from .httptracker import retrieve_peers_http_tracker
 from .peer import fetch_from_peer
@@ -65,7 +65,7 @@ class Magnet2Torrent:
         )
 
     def create_torrent(self, torrent_data):
-        torrent = {b"info": torrent_data}
+        torrent = {b"info": bdecode(torrent_data)}
         trackers = None
         if self.use_trackers:
             trackers = self.trackers
