@@ -93,5 +93,5 @@ async def retrieve_peers_udp_tracker(task_registry, host, port, tracker, infohas
         return tracker, {"seeders": 0, "leechers": 0, "peers": []}
     except asyncio.CancelledError:
         transport.close()
-
-    return tracker, result
+    else:
+        return tracker, result
