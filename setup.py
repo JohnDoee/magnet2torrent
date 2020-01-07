@@ -2,15 +2,13 @@ import os
 
 from setuptools import find_packages, setup
 
-from magnet2torrent import __version__
-
 def readme():
     with open("README.md") as f:
         return f.read()
 
 setup(
     name="magnet2torrent",
-    version=__version__,
+    version="1.0.2",
     url="https://github.com/JohnDoee/magnet2torrent",
     author="Anders Jensen",
     author_email="johndoee@tridentstream.org",
@@ -18,7 +16,7 @@ setup(
     long_description=readme(),
     long_description_content_type="text/markdown",
     license="MIT",
-    packages=find_packages(),
+    packages=find_packages("src"),
     package_dir={"":"src"},
     include_package_data=True,
     install_requires=["aiohttp==3.6.2", "six==1.13.0", ],
