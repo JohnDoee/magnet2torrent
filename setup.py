@@ -19,6 +19,7 @@ setup(
     long_description_content_type="text/markdown",
     license="MIT",
     packages=find_packages(),
+    package_dir={"":"src"},
     include_package_data=True,
     install_requires=["aiohttp==3.6.2", "six==1.13.0", ],
     classifiers=[
