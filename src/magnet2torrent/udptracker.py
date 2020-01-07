@@ -67,7 +67,7 @@ class TrackerUDPProtocol(asyncio.DatagramProtocol):
             )
             peer_data = data[20:]
             peers = []
-            while peer_data:
+            while len(peer_data) >= 6:
                 peer_ip, peer_port = struct.unpack("!IH", peer_data[:6])
                 peers.append((IPv4Address(peer_ip), peer_port))
                 peer_data = peer_data[6:]
