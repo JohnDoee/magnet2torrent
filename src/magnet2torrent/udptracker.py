@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import random
+import socket
 import struct
 from ipaddress import IPv4Address
 
@@ -50,6 +51,7 @@ class TrackerUDPProtocol(asyncio.DatagramProtocol):
 
     def datagram_received(self, data, addr):
         logger.debug(f"received datagram from {addr}")
+        print(data)
         asyncio.ensure_future(self._handle_response(data, addr))
 
     async def _handle_response(self, data, addr):
@@ -81,9 +83,12 @@ class TrackerUDPProtocol(asyncio.DatagramProtocol):
 async def retrieve_peers_udp_tracker(task_registry, host, port, tracker, infohash):
     loop = asyncio.get_running_loop()
     cb = loop.create_future()
-    transport, protocol = await loop.create_datagram_endpoint(
-        lambda: TrackerUDPProtocol(cb, infohash), remote_addr=(host, port)
-    )
+    try:
+        transport, protocol = await loop.create_datagram_endpoint(
+            lambda: TrackerUDPProtocol(cb, infohash), remote_addr=(host, port)
+        )
+    except socket.gaierror:
+        return tracker, {"seeders": 0, "leechers": 0, "peers": []}
     try:
         task = asyncio.ensure_future(cb)
         task_registry.add(task)
