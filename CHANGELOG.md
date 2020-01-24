@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [1.0.3] - 2020-01-24
+
+### Changed
+- Fixed bug related to HTTP annnounce not always being accepted
+- Fixed bug related to unresolable UDP trackers
+
 ## [1.0.2] - 2020-01-05
 
 ### Changed
