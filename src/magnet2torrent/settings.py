@@ -31,5 +31,7 @@ DEFAULT_TRACKERS = [
     "udp://zephir.monocul.us:6969/announce",
 ]
 
+BITTORRENT_PORT = random.randint(10000, 60000)
+
 
 SERVE_APIKEY = None
