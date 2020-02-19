@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [1.0.4] - 2020-02-19
+
+### Changed
+- Debug code removed
+
 ## [1.0.3] - 2020-01-24
 
 ### Changed
