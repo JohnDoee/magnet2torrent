@@ -2,10 +2,12 @@ import argparse
 import asyncio
 import ipaddress
 import logging
+import os
 
 from aiohttp import web
 
 from . import settings
+from .dht.network import Server as DHTServer
 from .exceptions import FailedToFetchException
 from .magnet2torrent import Magnet2Torrent
 from .server import routes
@@ -14,7 +16,11 @@ from .server import routes
 def main():
     parser = argparse.ArgumentParser(description="Turn a magnet link to torrent.")
     parser.add_argument("--debug", help="Enable debug", action="store_true")
+    parser.add_argument("--use-dht", help="Enable DHT", action="store_true", dest="use_dht")
+    parser.add_argument("--dht-state-file", help="Where to save DHT info", dest="dht_state_file")
     subparsers = parser.add_subparsers(help="sub-command help", dest="command")
+
+    # dht_test_subparser = subparsers.add_parser("dhttest")
 
     serve_subparser = subparsers.add_parser(
         "serve", help="Run an HTTP server that serves torrents via an API or directly"
@@ -48,6 +54,26 @@ def main():
             format="%(asctime)-15s:%(levelname)s:%(name)s:%(lineno)d:%(message)s",
         )
 
+    if args.use_dht:
+        import time
+        print("Bootstrapping DHT server", time.time())
+        loop = asyncio.get_event_loop()
+        dht_server = DHTServer()
+
+        if args.dht_state_file and os.path.isfile(args.dht_state_file):
+            dht_server = DHTServer.load_state(args.dht_state_file)
+            loop.run_until_complete(dht_server.listen(settings.DHT_PORT))
+        else:
+            dht_server = DHTServer()
+            loop.run_until_complete(dht_server.listen(settings.DHT_PORT))
+            loop.run_until_complete(dht_server.bootstrap(settings.DHT_BOOTSTRAP_NODES))
+
+        if args.dht_state_file:
+            dht_server.save_state_regularly(args.dht_state_file)
+        print("Done bootstrapping DHT server", time.time())
+    else:
+        dht_server = None
+
     if args.command == "serve":
         if not args.debug:
             stdio_handler = logging.StreamHandler()
@@ -57,12 +83,13 @@ def main():
             logger.addHandler(stdio_handler)
 
         settings.SERVE_APIKEY = args.apikey
+        settings.DHT_SERVER = dht_server
         app = web.Application()
         app.add_routes(routes)
         web.run_app(app, host=str(args.ip), port=args.port)
     elif args.command == "fetch":
         loop = asyncio.get_event_loop()
-        m2t = Magnet2Torrent(args.magnet)
+        m2t = Magnet2Torrent(args.magnet, dht_server=dht_server)
         try:
             filename, torrent_data = loop.run_until_complete(m2t.retrieve_torrent())
         except FailedToFetchException:
@@ -73,9 +100,15 @@ def main():
                 f.write(torrent_data)
 
             print(f"Downloaded magnet link into file: {filename}")
+
+        print(time.time())
+
+        if dht_server and args.dht_state_file:
+            dht_server.save_state(args.dht_state_file)
     else:
         parser.print_help()
 
 
 if __name__ == "__main__":
     main()
+

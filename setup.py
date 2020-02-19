@@ -19,7 +19,7 @@ setup(
     packages=find_packages("src"),
     package_dir={"":"src"},
     include_package_data=True,
-    install_requires=["aiohttp==3.6.2", "six==1.13.0", ],
+    install_requires=["aiohttp==3.6.*", "six>=1.13.0", ],
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Environment :: Web Environment",

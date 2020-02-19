@@ -44,10 +44,39 @@ async def fetch_that_torrent():
 asyncio.run(fetch_that_torrent())
 ```
 
-## TODO
+If you want to use DHT to retrieve, you will have to bootstrap and run it.
 
-- [ ] DHT support
+```python
 
+import asyncio
+import os
+
+from magnet2torrent import Magnet2Torrent, FailedToFetchException, settings
+
+
+DHT_STATE_FILE = "/tmp/dht.state"
+
+async def start_dht():
+    if os.path.exists(DHT_STATE_FILE):
+        dht_server = DHTServer.load_state(DHT_STATE_FILE)
+        await dht_server.listen(settings.DHT_PORT)
+    else:
+        dht_server = DHTServer()
+        await dht_server.listen(settings.DHT_PORT)
+        await dht_server.bootstrap(settings.DHT_BOOTSTRAP_NODES)
+    return dht_server
+
+async def fetch_that_torrent(dht_server):
+    m2t = Magnet2Torrent("magnet:?xt=urn:btih:e2467cbf021192c241367b892230dc1e05c0580e&dn=ubuntu-19.10-desktop-amd64.iso", dht_server=dht_server)
+    try:
+        filename, torrent_data = await m2t.retrieve_torrent()
+    except FailedToFetchException:
+        print("Failed")
+
+dht_server = asyncio.run(start_dht())
+asyncio.run(fetch_that_torrent(dht_server))
+dht_server.save_state(DHT_STATE_FILE)
+```
 
 ## License
 

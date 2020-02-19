@@ -20,12 +20,12 @@ class Magnet2Torrent:
         magnet_link,
         use_trackers=True,
         use_additional_trackers=False,
-        use_dht=False,
+        dht_server=None,
     ):
         self.magnet_link = magnet_link
         self.use_trackers = use_trackers
         self.use_additional_trackers = use_additional_trackers
-        self.use_dht = use_dht
+        self.dht_server = dht_server
 
     def _parse_url(self):
         url = urlparse(self.magnet_link)
@@ -75,7 +75,8 @@ class Magnet2Torrent:
             torrent[b"announce-list"] = [
                 [tracker.encode("utf-8")] for tracker in trackers
             ]
-            torrent[b"announce"] = torrent[b"announce-list"][0][0]
+            if torrent[b"announce-list"]:
+                torrent[b"announce"] = torrent[b"announce-list"][0][0]
 
         return f"{self.name}.torrent", bencode(torrent)
 
@@ -106,6 +107,11 @@ class Magnet2Torrent:
                 task.task_type = "tracker"
                 tasks.append(task)
 
+        if self.dht_server:
+            task = asyncio.ensure_future(self.dht_server.find_peers(task_registry, infohash))
+            task.task_type = "tracker"
+            tasks.append(task)
+
         handled_peers = set()
         while tasks:
             done, tasks = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
@@ -123,6 +129,10 @@ class Magnet2Torrent:
                         )
                         peer_task.task_type = "peer"
                         tasks.add(peer_task)
+                    if len(result) > 2:
+                        new_task = asyncio.ensure_future(result[2])
+                        new_task.task_type = task.task_type
+                        tasks.add(new_task)
                 elif task.task_type == "peer":
                     if result:
                         for task in task_registry:
