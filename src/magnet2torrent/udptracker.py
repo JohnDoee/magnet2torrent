@@ -51,7 +51,6 @@ class TrackerUDPProtocol(asyncio.DatagramProtocol):
 
     def datagram_received(self, data, addr):
         logger.debug(f"received datagram from {addr}")
-        print(data)
         asyncio.ensure_future(self._handle_response(data, addr))
 
     async def _handle_response(self, data, addr):
