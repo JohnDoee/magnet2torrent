@@ -1,16 +1,16 @@
 """
 Package for interacting on the network at a high level.
 """
-import random
-import pickle
 import asyncio
 import logging
+import pickle
+import random
 
-from .protocol import KRPCProtocol
-from .utils import digest
-from .storage import ForgetfulTokenStorage, ForgetfulPeerStorage
+from .crawling import NodeSpiderCrawl, PeerSpiderCrawl
 from .node import Node
-from .crawling import PeerSpiderCrawl, NodeSpiderCrawl
+from .protocol import KRPCProtocol
+from .storage import ForgetfulPeerStorage, ForgetfulTokenStorage
+from .utils import digest
 
 log = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
@@ -24,7 +24,15 @@ class Server:
 
     protocol_class = KRPCProtocol
 
-    def __init__(self, ksize=20, alpha=40, node_id=None, peer_storage=None, token_storage=None, buckets=None):
+    def __init__(
+        self,
+        ksize=20,
+        alpha=40,
+        node_id=None,
+        peer_storage=None,
+        token_storage=None,
+        buckets=None,
+    ):
         """
         Create a server instance.  This will start listening on the given port.
 
@@ -57,19 +65,25 @@ class Server:
             self.save_state_loop.cancel()
 
     def _create_protocol(self):
-        return self.protocol_class(self.node, self.peer_storage, self.token_storage, self.ksize, buckets=self.buckets)
+        return self.protocol_class(
+            self.node,
+            self.peer_storage,
+            self.token_storage,
+            self.ksize,
+            buckets=self.buckets,
+        )
 
-    async def listen(self, port, interface='0.0.0.0'):
+    async def listen(self, port, interface="0.0.0.0"):
         """
         Start listening on the given port.
 
         Provide interface="::" to accept ipv6 address
         """
         loop = asyncio.get_event_loop()
-        listen = loop.create_datagram_endpoint(self._create_protocol,
-                                               local_addr=(interface, port))
-        log.info("Node %i listening on %s:%i",
-                 self.node.long_id, interface, port)
+        listen = loop.create_datagram_endpoint(
+            self._create_protocol, local_addr=(interface, port)
+        )
+        log.info("Node %i listening on %s:%i", self.node.long_id, interface, port)
         self.transport, self.protocol = await listen
         # finally, schedule refreshing table
         self.refresh_table()
@@ -89,8 +103,9 @@ class Server:
         for node_id in self.protocol.get_refresh_ids():
             node = Node(node_id)
             nearest = self.protocol.router.find_neighbors(node, self.alpha)
-            spider = NodeSpiderCrawl(self.protocol, node, nearest,
-                                     self.ksize, self.alpha)
+            spider = NodeSpiderCrawl(
+                self.protocol, node, nearest, self.ksize, self.alpha
+            )
             results.append(spider.find())
 
         # do our crawling
@@ -121,13 +136,13 @@ class Server:
             addrs: A `list` of (ip, port) `tuple` pairs.  Note that only IP
                    addresses are acceptable - hostnames will cause an error.
         """
-        log.debug("Attempting to bootstrap node with %i initial contacts",
-                  len(addrs))
+        log.debug("Attempting to bootstrap node with %i initial contacts", len(addrs))
         cos = list(map(self.bootstrap_node, addrs))
         gathered = await asyncio.gather(*cos)
         nodes = [node for node in gathered if node is not None]
-        spider = NodeSpiderCrawl(self.protocol, self.node, nodes,
-                                 self.ksize, self.alpha)
+        spider = NodeSpiderCrawl(
+            self.protocol, self.node, nodes, self.ksize, self.alpha
+        )
         return await spider.find()
 
     async def bootstrap_node(self, addr):
@@ -141,11 +156,13 @@ class Server:
         if not nearest:
             log.info("There are no known neighbors to get key %s", info_hash)
             future = asyncio.Future()
-            future.set_result(('dht://', {"seeders": 0, "leechers": 0, "peers": []}))
+            future.set_result(("dht://", {"seeders": 0, "leechers": 0, "peers": []}))
             return future
 
         spider_queue = asyncio.Queue()
-        spider = PeerSpiderCrawl(self.protocol, node, nearest, self.ksize, self.alpha, spider_queue)
+        spider = PeerSpiderCrawl(
+            self.protocol, node, nearest, self.ksize, self.alpha, spider_queue
+        )
         task = asyncio.create_task(spider.find())
 
         loop = asyncio.get_running_loop()
@@ -153,19 +170,30 @@ class Server:
         task_registry.add(cancel_task)
 
         result_queue = asyncio.Queue()
+
         async def found_peers():
             while not spider.crawl_finished:
                 try:
                     task = asyncio.ensure_future(spider_queue.get())
-                    done, pending = await asyncio.wait({task, cancel_task}, return_when=asyncio.FIRST_COMPLETED)
+                    done, pending = await asyncio.wait(
+                        {task, cancel_task}, return_when=asyncio.FIRST_COMPLETED
+                    )
                     for peers in done:
                         peers = peers.result()
-                        await result_queue.put(('dht://', {"seeders": 0, "leechers": 0, "peers": peers}, result_queue.get()))
+                        await result_queue.put(
+                            (
+                                "dht://",
+                                {"seeders": 0, "leechers": 0, "peers": peers},
+                                result_queue.get(),
+                            )
+                        )
                 except asyncio.CancelledError:
                     spider.cancel_crawl = True
                     break
 
-            await result_queue.put(('dht://', {"seeders": 0, "leechers": 0, "peers": []}))
+            await result_queue.put(
+                ("dht://", {"seeders": 0, "leechers": 0, "peers": []})
+            )
             task_registry.remove(cancel_task)
 
         asyncio.create_task(found_peers())
@@ -173,15 +201,15 @@ class Server:
 
     def dumps_state(self):
         return {
-            'ksize': self.ksize,
-            'alpha': self.alpha,
-            'id': self.node.id,
-            'buckets': self.protocol.router.buckets,
+            "ksize": self.ksize,
+            "alpha": self.alpha,
+            "id": self.node.id,
+            "buckets": self.protocol.router.buckets,
         }
 
     @classmethod
     def loads_state(cls, data):
-        return cls(data['ksize'], data['alpha'], data['id'], buckets=data['buckets'])
+        return cls(data["ksize"], data["alpha"], data["id"], buckets=data["buckets"])
 
     def save_state(self, fname):
         """
@@ -190,7 +218,7 @@ class Server:
         """
         log.info("Saving state to %s", fname)
         data = self.dumps_state()
-        with open(fname, 'wb') as file:
+        with open(fname, "wb") as file:
             pickle.dump(data, file)
 
     @classmethod
@@ -200,7 +228,7 @@ class Server:
         from a cache file with the given fname.
         """
         log.info("Loading state from %s", fname)
-        with open(fname, 'rb') as file:
+        with open(fname, "rb") as file:
             data = pickle.load(file)
         svr = cls.loads_state(data)
         return svr
@@ -217,10 +245,9 @@ class Server:
         """
         self.save_state(fname)
         loop = asyncio.get_event_loop()
-        self.save_state_loop = loop.call_later(frequency,
-                                               self.save_state_regularly,
-                                               fname,
-                                               frequency)
+        self.save_state_loop = loop.call_later(
+            frequency, self.save_state_regularly, fname, frequency
+        )
 
 
 def check_dht_value_type(value):
@@ -228,11 +255,5 @@ def check_dht_value_type(value):
     Checks to see if the type of the value is a valid type for
     placing in the dht.
     """
-    typeset = [
-        int,
-        float,
-        bool,
-        str,
-        bytes
-    ]
+    typeset = [int, float, bool, str, bytes]
     return type(value) in typeset  # pylint: disable=unidiomatic-typecheck

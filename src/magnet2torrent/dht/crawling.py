@@ -1,12 +1,10 @@
-from collections import Counter
 import logging
 import struct
-
+from collections import Counter
 from ipaddress import IPv4Address
 
 from .node import Node, NodeHeap
 from .utils import gather_dict
-
 
 log = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
@@ -16,6 +14,7 @@ class SpiderCrawl:
     """
     Crawl the network and look for given 160-bit keys.
     """
+
     def __init__(self, protocol, node, peers, ksize, alpha):
         """
         Create a new C{SpiderCrawl}er.

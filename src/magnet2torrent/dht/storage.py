@@ -1,9 +1,9 @@
-import time
-import random
-from itertools import takewhile
 import operator
+import random
+import time
+from abc import ABC, abstractmethod
 from collections import OrderedDict, defaultdict
-from abc import abstractmethod, ABC
+from itertools import takewhile
 
 
 class IStorage(ABC):

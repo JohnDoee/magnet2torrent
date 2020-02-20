@@ -35,12 +35,12 @@ BITTORRENT_PORT = random.randint(10000, 60000)
 
 SERVE_APIKEY = None
 
-DHT_BOOTSTRAP_NODES = [ # TODO: make hostnames and resolve on demand
-    ('82.221.103.244', 6881),
-    ('67.215.246.10', 6881),
-    ('212.129.33.59', 6881),
-    ('87.98.162.88', 6881),
-    ('174.129.43.152', 6881)
+DHT_BOOTSTRAP_NODES = [  # TODO: make hostnames and resolve on demand
+    ("82.221.103.244", 6881),
+    ("67.215.246.10", 6881),
+    ("212.129.33.59", 6881),
+    ("87.98.162.88", 6881),
+    ("174.129.43.152", 6881),
 ]
 DHT_PORT = 6881
 DHT_SERVER = None

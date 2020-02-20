@@ -1,14 +1,13 @@
-import random
 import asyncio
 import hashlib
 import logging
 import os
+import random
 import struct
+from base64 import b64encode
 from ipaddress import IPv4Address
 
-from base64 import b64encode
-
-from ..bencode import bencode, bdecode, BTFailure
+from ..bencode import BTFailure, bdecode, bencode
 from ..exceptions import MalformedMessage
 from .node import Node
 from .routing import RoutingTable
@@ -20,8 +19,17 @@ log = logging.getLogger(__name__)  # pylint: disable=invalid-name
 # https://github.com/bmuller/rpcudp/blob/master/rpcudp/protocol.py
 # Has same license as kademlia, see __init__.py
 
+
 class KRPCProtocol(asyncio.DatagramProtocol):
-    def __init__(self, source_node, peer_storage, token_storage, ksize, wait_timeout=5, buckets=None):
+    def __init__(
+        self,
+        source_node,
+        peer_storage,
+        token_storage,
+        ksize,
+        wait_timeout=5,
+        buckets=None,
+    ):
         self.router = RoutingTable(self, ksize, source_node, buckets=buckets)
         self.peer_storage = peer_storage
         self.token_storage = token_storage
@@ -49,12 +57,14 @@ class KRPCProtocol(asyncio.DatagramProtocol):
         if not transaction_id:
             return
 
-        if query_type == b"q": # query
+        if query_type == b"q":  # query
             args = data.get(b"a")
             func_name = data.get(b"q")
             if func_name and isinstance(args, dict):
-                asyncio.ensure_future(self.handle_request(transaction_id, func_name, args, addr))
-        elif query_type == b"r": # response
+                asyncio.ensure_future(
+                    self.handle_request(transaction_id, func_name, args, addr)
+                )
+        elif query_type == b"r":  # response
             args = data.get(b"r")
             if isinstance(args, dict):
                 asyncio.ensure_future(self.handle_response(transaction_id, args, addr))
@@ -65,30 +75,28 @@ class KRPCProtocol(asyncio.DatagramProtocol):
         func = getattr(self, f"rpc_{func_name.decode('utf-8')}", None)
         if func is None or not callable(func):
             msgargs = (self.__class__.__name__, func_name)
-            log.info("%s has no callable method "
-                        "rpc_%s; ignoring request", *msgargs)
+            log.info("%s has no callable method " "rpc_%s; ignoring request", *msgargs)
             return
 
         if not asyncio.iscoroutinefunction(func):
             func = asyncio.coroutine(func)
-        args = {k.decode('utf-8'): v for (k, v) in args.items()}
+        args = {k.decode("utf-8"): v for (k, v) in args.items()}
         response = await func(addr, **args)
-        log.debug("sending response %s for msg id %s to %s",
-                  response, b64encode(transaction_id), addr)
-        txdata = bencode({
-            b"y": b"r",
-            b"r": response,
-        })
+        log.debug(
+            "sending response %s for msg id %s to %s",
+            response,
+            b64encode(transaction_id),
+            addr,
+        )
+        txdata = bencode({b"y": b"r", b"r": response,})
         self.transport.sendto(txdata, addr)
 
     async def handle_response(self, transaction_id, args, addr):
         msgargs = (b64encode(transaction_id), addr)
         if transaction_id not in self._outstanding:
-            log.info("received unknown message %s "
-                        "from %s; ignoring", *msgargs)
+            log.info("received unknown message %s " "from %s; ignoring", *msgargs)
             return
-        log.debug("received response %s for message "
-                  "id %s from %s", args, *msgargs)
+        log.debug("received response %s for message " "id %s from %s", args, *msgargs)
         future, timeout = self._outstanding[transaction_id]
         timeout.cancel()
         future.set_result((True, args))
@@ -96,8 +104,7 @@ class KRPCProtocol(asyncio.DatagramProtocol):
 
     def _timeout(self, transaction_id):
         args = (b64encode(transaction_id), self._wait_timeout)
-        log.info("Did not received reply for msg "
-                  "id %s within %i seconds", *args)
+        log.info("Did not received reply for msg " "id %s within %i seconds", *args)
         self._outstanding[transaction_id][0].set_result((False, None))
         del self._outstanding[transaction_id]
 
@@ -107,7 +114,7 @@ class KRPCProtocol(asyncio.DatagramProtocol):
         """
         ids = []
         for bucket in self.router.lonely_buckets():
-            rid = random.randint(*bucket.range).to_bytes(20, byteorder='big')
+            rid = random.randint(*bucket.range).to_bytes(20, byteorder="big")
             ids.append(rid)
         return ids
 
@@ -116,35 +123,38 @@ class KRPCProtocol(asyncio.DatagramProtocol):
         self.welcome_if_new(source)
         return {b"id": id}
 
-    def rpc_announce_peer(self, sender, id, implied_port, info_hash, port, token):  # TODO
+    def rpc_announce_peer(
+        self, sender, id, implied_port, info_hash, port, token
+    ):  # TODO
         source = Node(id, sender[0], sender[1])
         self.welcome_if_new(source)
         if self.token_storage.verify_token(sender[0], id, info_hash, token):
             if implied_port:
                 port = sender[1]
-            log.debug("got an announce_peer request from %s, storing '%s'",
-                    sender, info_hash.hex())
+            log.debug(
+                "got an announce_peer request from %s, storing '%s'",
+                sender,
+                info_hash.hex(),
+            )
             self.peer_storage.insert_peer((sender[0], port))
         else:
             log.debug("Invalid token from %s", sender)
         return {b"id": id}
 
     def rpc_find_node(self, sender, id, target, want="n4", token=None):
-        log.info("finding neighbors of %i in local table",
-                 int(id.hex(), 16))
+        log.info("finding neighbors of %i in local table", int(id.hex(), 16))
         source = Node(id, sender[0], sender[1])
         self.welcome_if_new(source)
         node = Node(target)
         neighbors = self.router.find_neighbors(node, exclude=source)
-        data = {
-            b"id": id,
-            b"nodes": b"".join([n.packed for n in neighbors])
-        }
+        data = {b"id": id, b"nodes": b"".join([n.packed for n in neighbors])}
         if token:
             data[b"token"] = token
         return data
 
-    def rpc_get_peers(self, sender, id, info_hash, want="n4", noseed=0, scrape=0, bs=None):
+    def rpc_get_peers(
+        self, sender, id, info_hash, want="n4", noseed=0, scrape=0, bs=None
+    ):
         source = Node(id, sender[0], sender[1])
         self.welcome_if_new(source)
         peers = self.peer_storage.get_peers(info_hash)
@@ -155,17 +165,24 @@ class KRPCProtocol(asyncio.DatagramProtocol):
         return {
             b"id": id,
             b"token": token,
-            b"values": [IPv4Address(peer[0]).packed + struct.pack("!H", peer[1]) for peer in peers],
+            b"values": [
+                IPv4Address(peer[0]).packed + struct.pack("!H", peer[1])
+                for peer in peers
+            ],
         }
 
     async def call_find_node(self, node_to_ask, node_to_find):
         address = (node_to_ask.ip, node_to_ask.port)
-        result = await self.find_node(address, {b"id": self.source_node.id, b"target": node_to_find.id})
+        result = await self.find_node(
+            address, {b"id": self.source_node.id, b"target": node_to_find.id}
+        )
         return self.handle_call_response(result, node_to_ask)
 
     async def call_get_peers(self, node_to_ask, node_to_find):
         address = (node_to_ask.ip, node_to_ask.port)
-        result = await self.get_peers(address, {b"id": self.source_node.id, b"info_hash": node_to_find.id})
+        result = await self.get_peers(
+            address, {b"id": self.source_node.id, b"info_hash": node_to_find.id}
+        )
         return self.handle_call_response(result, node_to_ask)
 
     async def call_ping(self, node_to_ask):
@@ -173,7 +190,7 @@ class KRPCProtocol(asyncio.DatagramProtocol):
         result = await self.ping(address, {b"id": self.source_node.id})
         return self.handle_call_response(result, node_to_ask)
 
-    async def call_announce_peer(self, node_to_ask, key, value): # TODO
+    async def call_announce_peer(self, node_to_ask, key, value):  # TODO
         address = (node_to_ask.ip, node_to_ask.port)
         result = await self.store(address, self.source_node.id, key, value)
         return self.handle_call_response(result, node_to_ask)
@@ -236,24 +253,28 @@ class KRPCProtocol(asyncio.DatagramProtocol):
 
         def func(address, args):
             transaction_id = hashlib.sha1(os.urandom(32)).digest()
-            txdata = bencode({
-                b"y": b"q",
-                b"t": transaction_id,
-                b"a": args,
-                b"q": name.encode("utf-8"),
-
-            })
-            log.debug("calling remote function %s on %s (msgid %s)",
-                      name, address, b64encode(transaction_id))
+            txdata = bencode(
+                {
+                    b"y": b"q",
+                    b"t": transaction_id,
+                    b"a": args,
+                    b"q": name.encode("utf-8"),
+                }
+            )
+            log.debug(
+                "calling remote function %s on %s (msgid %s)",
+                name,
+                address,
+                b64encode(transaction_id),
+            )
             self.transport.sendto(txdata, address)
 
             loop = asyncio.get_event_loop()
-            if hasattr(loop, 'create_future'):
+            if hasattr(loop, "create_future"):
                 future = loop.create_future()
             else:
                 future = asyncio.Future()
-            timeout = loop.call_later(self._wait_timeout,
-                                      self._timeout, transaction_id)
+            timeout = loop.call_later(self._wait_timeout, self._timeout, transaction_id)
             self._outstanding[transaction_id] = (future, timeout)
             return future
 

@@ -33,7 +33,7 @@ async def retrieve_peers_http_tracker(task_registry, tracker, infohash):
         return tracker, {"seeders": 0, "leechers": 0, "peers": []}
 
     result = bdecode(result)
-    if b'failure reason' in result:
+    if b"failure reason" in result:
         return tracker, {"seeders": 0, "leechers": 0, "peers": []}
 
     peer_data = result[b"peers"]

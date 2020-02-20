@@ -16,8 +16,12 @@ from .server import routes
 def main():
     parser = argparse.ArgumentParser(description="Turn a magnet link to torrent.")
     parser.add_argument("--debug", help="Enable debug", action="store_true")
-    parser.add_argument("--use-dht", help="Enable DHT", action="store_true", dest="use_dht")
-    parser.add_argument("--dht-state-file", help="Where to save DHT info", dest="dht_state_file")
+    parser.add_argument(
+        "--use-dht", help="Enable DHT", action="store_true", dest="use_dht"
+    )
+    parser.add_argument(
+        "--dht-state-file", help="Where to save DHT info", dest="dht_state_file"
+    )
     subparsers = parser.add_subparsers(help="sub-command help", dest="command")
 
     # dht_test_subparser = subparsers.add_parser("dhttest")
@@ -55,8 +59,7 @@ def main():
         )
 
     if args.use_dht:
-        import time
-        print("Bootstrapping DHT server", time.time())
+        print("Bootstrapping DHT server")
         loop = asyncio.get_event_loop()
         dht_server = DHTServer()
 
@@ -70,7 +73,7 @@ def main():
 
         if args.dht_state_file:
             dht_server.save_state_regularly(args.dht_state_file)
-        print("Done bootstrapping DHT server", time.time())
+        print("Done bootstrapping DHT server")
     else:
         dht_server = None
 
@@ -101,8 +104,6 @@ def main():
 
             print(f"Downloaded magnet link into file: {filename}")
 
-        print(time.time())
-
         if dht_server and args.dht_state_file:
             dht_server.save_state(args.dht_state_file)
     else:
@@ -111,4 +112,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

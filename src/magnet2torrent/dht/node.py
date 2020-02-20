@@ -1,7 +1,7 @@
-import struct
-from operator import itemgetter
-from ipaddress import IPv4Address
 import heapq
+import struct
+from ipaddress import IPv4Address
+from operator import itemgetter
 
 
 class Node:
@@ -11,6 +11,7 @@ class Node:
     This class should generally not be instantiated directly, as it is a low
     level construct mostly used by the router.
     """
+
     def __init__(self, node_id, ip=None, port=None):
         """
         Create a Node instance.
@@ -59,6 +60,7 @@ class NodeHeap:
     """
     A heap of nodes ordered by distance to a given node.
     """
+
     def __init__(self, node, maxsize):
         """
         Constructor.

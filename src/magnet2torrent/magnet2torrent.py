@@ -5,7 +5,7 @@ import logging
 from urllib.parse import parse_qs, urlparse
 
 from . import settings
-from .bencode import bencode, bdecode
+from .bencode import bdecode, bencode
 from .exceptions import FailedToFetchException
 from .httptracker import retrieve_peers_http_tracker
 from .peer import fetch_from_peer
@@ -108,7 +108,9 @@ class Magnet2Torrent:
                 tasks.append(task)
 
         if self.dht_server:
-            task = asyncio.ensure_future(self.dht_server.find_peers(task_registry, infohash))
+            task = asyncio.ensure_future(
+                self.dht_server.find_peers(task_registry, infohash)
+            )
             task.task_type = "tracker"
             tasks.append(task)
 

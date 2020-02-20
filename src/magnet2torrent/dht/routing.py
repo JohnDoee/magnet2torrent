@@ -1,12 +1,12 @@
-import heapq
-import time
-import operator
 import asyncio
+import heapq
 import logging
-
-from itertools import chain
+import operator
+import time
 from collections import OrderedDict
-from .utils import shared_prefix, bytes_to_bit_string
+from itertools import chain
+
+from .utils import bytes_to_bit_string, shared_prefix
 
 log = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
@@ -94,7 +94,7 @@ class TableTraverser:
         table.buckets[index].touch_last_updated()
         self.current_nodes = table.buckets[index].get_nodes()
         self.left_buckets = table.buckets[:index]
-        self.right_buckets = table.buckets[(index + 1):]
+        self.right_buckets = table.buckets[(index + 1) :]
         self.left = True
 
     def __iter__(self):
