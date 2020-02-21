@@ -45,7 +45,7 @@ class KRPCProtocol(asyncio.DatagramProtocol):
         log.debug("received datagram from %s", addr)
         try:
             data = bdecode(data)
-        except (BTFailure, ValueError):
+        except (BTFailure, ValueError, KeyError):
             log.info("Failed to decode message")
             return
 

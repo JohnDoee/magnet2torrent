@@ -26,8 +26,8 @@ class Server:
 
     def __init__(
         self,
-        ksize=20,
-        alpha=40,
+        ksize=8,
+        alpha=100,
         node_id=None,
         peer_storage=None,
         token_storage=None,
@@ -152,7 +152,7 @@ class Server:
     def find_peers(self, task_registry, info_hash):
         log.info("Looking for peers for %s", info_hash)
         node = Node(info_hash)
-        nearest = self.protocol.router.find_neighbors(node)
+        nearest = self.protocol.router.find_neighbors(node, k=self.ksize * 4)
         if not nearest:
             log.info("There are no known neighbors to get key %s", info_hash)
             future = asyncio.Future()
@@ -161,7 +161,7 @@ class Server:
 
         spider_queue = asyncio.Queue()
         spider = PeerSpiderCrawl(
-            self.protocol, node, nearest, self.ksize, self.alpha, spider_queue
+            self.protocol, node, nearest, self.ksize * 4, self.alpha, spider_queue
         )
         task = asyncio.create_task(spider.find())
 

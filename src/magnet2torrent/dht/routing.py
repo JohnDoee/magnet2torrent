@@ -26,7 +26,7 @@ class KBucket:
         return list(self.nodes.values())
 
     def split(self):
-        midpoint = (self.range[0] + self.range[1]) / 2
+        midpoint = (self.range[0] + self.range[1]) // 2
         one = KBucket(self.range[0], midpoint, self.ksize)
         two = KBucket(midpoint + 1, self.range[1], self.ksize)
         nodes = chain(self.nodes.values(), self.replacement_nodes.values())
@@ -169,7 +169,7 @@ class RoutingTable:
 
         # Per section 4.2 of paper, split if the bucket has the node
         # in its range or if the depth is not congruent to 0 mod 5
-        if bucket.has_in_range(self.node) or bucket.depth() % 5 != 0:
+        if bucket.has_in_range(self.node):# or bucket.depth() % 5 != 0:
             self.split_bucket(index)
             self.add_contact(node)
         else:
