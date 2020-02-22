@@ -26,6 +26,11 @@ Run it as an HTTP server.
 magnet2torrent serve
 ```
 
+Run it as an HTTP server with lots of features enabled.
+
+```bash
+magnet2torrent --use-dht --dht-state-file dht.state --torrent-cache-folder torcache serve --apikey secretkey
+```
 
 Use from python
 
