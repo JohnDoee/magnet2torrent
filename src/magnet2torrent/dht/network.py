@@ -172,6 +172,7 @@ class Server:
         result_queue = asyncio.Queue()
 
         async def found_peers():
+            task = None
             while not spider.crawl_finished:
                 try:
                     task = asyncio.ensure_future(spider_queue.get())
@@ -184,11 +185,13 @@ class Server:
                             (
                                 "dht://",
                                 {"seeders": 0, "leechers": 0, "peers": peers},
-                                result_queue.get(),
+                                lambda:result_queue.get(),
                             )
                         )
                 except asyncio.CancelledError:
                     spider.cancel_crawl = True
+                    if task and not task.done():
+                        task.cancel()
                     break
 
             await result_queue.put(

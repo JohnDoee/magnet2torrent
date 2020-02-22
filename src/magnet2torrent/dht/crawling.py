@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import struct
 from collections import Counter
@@ -34,37 +35,39 @@ class SpiderCrawl:
         self.node = node
         self.nearest = NodeHeap(self.node, self.ksize)
         self.last_ids_crawled = []
+        self.cancel_crawl = False
+        self.crawl_finished = False
         log.info("creating spider with peers: %s", peers)
         self.nearest.push(peers)
 
     async def _find(self, rpcmethod):
-        """
-        Get either a value or list of nodes.
-
-        Args:
-            rpcmethod: The protocol's callfindValue or call_find_node.
-
-        The process:
-          1. calls find_* to current ALPHA nearest not already queried nodes,
-             adding results to current nearest list of k nodes.
-          2. current nearest list needs to keep track of who has been queried
-             already sort by nearest, keep KSIZE
-          3. if list is same as last time, next call should be to everyone not
-             yet queried
-          4. repeat, unless nearest list has all been queried, then ur done
-        """
         log.info("crawling network with nearest: %s", str(tuple(self.nearest)))
-        count = self.alpha
-        if self.nearest.get_ids() == self.last_ids_crawled:
-            count = len(self.nearest)
-        self.last_ids_crawled = self.nearest.get_ids()
 
-        dicts = {}
-        for peer in self.nearest.get_uncontacted()[:count]:
-            dicts[peer.id] = rpcmethod(peer, self.node)
-            self.nearest.mark_contacted(peer)
-        found = await gather_dict(dicts)
-        return await self._nodes_found(found)
+        tasks = set()
+        task_mapping = {}
+        while not self.cancel_crawl and (not self.nearest.have_contacted_all() or tasks):
+            count = self.alpha - len(tasks)
+            for peer in self.nearest.get_uncontacted()[:count]:
+                self.nearest.mark_contacted(peer)
+                task = asyncio.ensure_future(rpcmethod(peer, self.node))
+                task_mapping[task] = peer.id
+                tasks.add(task)
+
+            done, tasks = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+            done_mapping = {}
+            for task in done:
+                done_mapping[task_mapping.pop(task)] = task.result()
+            await self._nodes_found(done_mapping)
+
+        self.crawl_finished = True
+
+        for task in tasks:
+            task.cancel()
+
+        return await self._return_value()
+
+    async def _return_value(self):
+        raise NotImplementedError
 
     async def _nodes_found(self, responses):
         raise NotImplementedError
@@ -73,8 +76,6 @@ class SpiderCrawl:
 class PeerSpiderCrawl(SpiderCrawl):
     def __init__(self, protocol, node, peers, ksize, alpha, queue):
         SpiderCrawl.__init__(self, protocol, node, peers, ksize, alpha)
-        self.crawl_finished = False
-        self.cancel_crawl = False
         self._queue = queue
 
     async def find(self):
@@ -101,11 +102,8 @@ class PeerSpiderCrawl(SpiderCrawl):
                 self.nearest.push(response.get_node_list())
         self.nearest.remove(toremove)
 
-        if self.nearest.have_contacted_all():
-            self.crawl_finished = True
-            await self._queue.put([])
-            return
-        return await self.find()
+    async def _return_value(self):
+        return
 
 
 class NodeSpiderCrawl(SpiderCrawl):
@@ -128,9 +126,8 @@ class NodeSpiderCrawl(SpiderCrawl):
                 self.nearest.push(response.get_node_list())
         self.nearest.remove(toremove)
 
-        if self.nearest.have_contacted_all():
-            return list(self.nearest)
-        return await self.find()
+    async def _return_value(self):
+        return list(self.nearest)
 
 
 class RPCFindResponse:

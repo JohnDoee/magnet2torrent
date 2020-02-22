@@ -2,6 +2,7 @@ import asyncio
 import base64
 import binascii
 import logging
+from itertools import chain
 from urllib.parse import parse_qs, urlparse
 
 from . import settings
@@ -132,14 +133,15 @@ class Magnet2Torrent:
                         peer_task.task_type = "peer"
                         tasks.add(peer_task)
                     if len(result) > 2:
-                        new_task = asyncio.ensure_future(result[2])
+                        new_task = asyncio.ensure_future(result[2]())
                         new_task.task_type = task.task_type
                         tasks.add(new_task)
                 elif task.task_type == "peer":
                     if result:
-                        for task in task_registry:
+                        for task in chain(task_registry, tasks):
                             if not task.done():
                                 task.cancel()
+
                         return self.create_torrent(result)
 
         raise FailedToFetchException()

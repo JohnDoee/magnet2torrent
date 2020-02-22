@@ -99,13 +99,16 @@ class KRPCProtocol(asyncio.DatagramProtocol):
         log.debug("received response %s for message " "id %s from %s", args, *msgargs)
         future, timeout = self._outstanding[transaction_id]
         timeout.cancel()
-        future.set_result((True, args))
+        if not future.cancelled():
+            future.set_result((True, args))
         del self._outstanding[transaction_id]
 
     def _timeout(self, transaction_id):
         args = (b64encode(transaction_id), self._wait_timeout)
         log.info("Did not received reply for msg " "id %s within %i seconds", *args)
-        self._outstanding[transaction_id][0].set_result((False, None))
+        future = self._outstanding[transaction_id][0]
+        if not future.cancelled():
+            future.set_result((False, None))
         del self._outstanding[transaction_id]
 
     def get_refresh_ids(self):
