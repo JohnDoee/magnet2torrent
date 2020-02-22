@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Added
+- Possible to change DHT port and host
 - Optional torrent metadata storage cache
 
 ### Changed

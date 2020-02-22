@@ -25,6 +25,15 @@ def main():
         "--dht-state-file", help="Where to save DHT info", dest="dht_state_file", type=str,
     )
     parser.add_argument(
+        "--dht-port", help="Port to listen for DHT on", dest="dht_port", type=int, default=settings.DHT_PORT,
+    )
+    parser.add_argument(
+        "--dht-ip", help="Host to listen for DHT on",
+        dest="dht_ip",
+        type=ipaddress.ip_address,
+        default=ipaddress.IPv4Address("0.0.0.0"),
+    )
+    parser.add_argument(
         "--torrent-cache-folder", help="Folder to cache torrent metadata into", dest="torrent_cache_folder", type=str,
     )
     subparsers = parser.add_subparsers(help="sub-command help", dest="command")
@@ -38,10 +47,10 @@ def main():
         "--ip",
         type=ipaddress.ip_address,
         default=ipaddress.IPv4Address("0.0.0.0"),
-        help="Port to listen on",
+        help="Host to listen on",
     )
     serve_subparser.add_argument(
-        "--port", type=int, default=18667, help="Host to listen on"
+        "--port", type=int, default=18667, help="Port to listen on"
     )
     serve_subparser.add_argument(
         "--apikey",
@@ -80,10 +89,10 @@ def main():
 
         if args.dht_state_file and os.path.isfile(args.dht_state_file):
             dht_server = DHTServer.load_state(args.dht_state_file)
-            loop.run_until_complete(dht_server.listen(settings.DHT_PORT))
+            loop.run_until_complete(dht_server.listen(args.dht_port, str(args.dht_ip)))
         else:
             dht_server = DHTServer()
-            loop.run_until_complete(dht_server.listen(settings.DHT_PORT))
+            loop.run_until_complete(dht_server.listen(args.dht_port, str(args.dht_ip)))
             loop.run_until_complete(dht_server.bootstrap(settings.DHT_BOOTSTRAP_NODES))
 
         if args.dht_state_file:
