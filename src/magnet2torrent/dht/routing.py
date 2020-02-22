@@ -169,7 +169,7 @@ class RoutingTable:
 
         # Per section 4.2 of paper, split if the bucket has the node
         # in its range or if the depth is not congruent to 0 mod 5
-        if bucket.has_in_range(self.node):# or bucket.depth() % 5 != 0:
+        if bucket.has_in_range(self.node):  # or bucket.depth() % 5 != 0:
             self.split_bucket(index)
             self.add_contact(node)
         else:

@@ -89,8 +89,13 @@ class Magnet2Torrent:
         if not self.torrent_cache_folder:
             return None
 
-        filename = binascii.hexlify(self.infohash).decode('utf-8')
-        return Path(self.torrent_cache_folder) / Path(filename[:2]) / Path(filename[2:4]) / Path(filename)
+        filename = binascii.hexlify(self.infohash).decode("utf-8")
+        return (
+            Path(self.torrent_cache_folder)
+            / Path(filename[:2])
+            / Path(filename[2:4])
+            / Path(filename)
+        )
 
     async def retrieve_torrent(self):
         torrent_cache_path = self.torrent_cache_path

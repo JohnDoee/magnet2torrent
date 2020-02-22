@@ -185,7 +185,7 @@ class Server:
                             (
                                 "dht://",
                                 {"seeders": 0, "leechers": 0, "peers": peers},
-                                lambda:result_queue.get(),
+                                lambda: result_queue.get(),
                             )
                         )
                 except asyncio.CancelledError:

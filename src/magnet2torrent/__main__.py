@@ -3,7 +3,6 @@ import asyncio
 import ipaddress
 import logging
 import os
-
 from pathlib import Path
 
 from aiohttp import web
@@ -22,19 +21,30 @@ def main():
         "--use-dht", help="Enable DHT", action="store_true", dest="use_dht"
     )
     parser.add_argument(
-        "--dht-state-file", help="Where to save DHT info", dest="dht_state_file", type=str,
+        "--dht-state-file",
+        help="Where to save DHT info",
+        dest="dht_state_file",
+        type=str,
     )
     parser.add_argument(
-        "--dht-port", help="Port to listen for DHT on", dest="dht_port", type=int, default=settings.DHT_PORT,
+        "--dht-port",
+        help="Port to listen for DHT on",
+        dest="dht_port",
+        type=int,
+        default=settings.DHT_PORT,
     )
     parser.add_argument(
-        "--dht-ip", help="Host to listen for DHT on",
+        "--dht-ip",
+        help="Host to listen for DHT on",
         dest="dht_ip",
         type=ipaddress.ip_address,
         default=ipaddress.IPv4Address("0.0.0.0"),
     )
     parser.add_argument(
-        "--torrent-cache-folder", help="Folder to cache torrent metadata into", dest="torrent_cache_folder", type=str,
+        "--torrent-cache-folder",
+        help="Folder to cache torrent metadata into",
+        dest="torrent_cache_folder",
+        type=str,
     )
     subparsers = parser.add_subparsers(help="sub-command help", dest="command")
 
@@ -117,7 +127,11 @@ def main():
         web.run_app(app, host=str(args.ip), port=args.port)
     elif args.command == "fetch":
         loop = asyncio.get_event_loop()
-        m2t = Magnet2Torrent(args.magnet, dht_server=dht_server, torrent_cache_folder=args.torrent_cache_folder)
+        m2t = Magnet2Torrent(
+            args.magnet,
+            dht_server=dht_server,
+            torrent_cache_folder=args.torrent_cache_folder,
+        )
         try:
             filename, torrent_data = loop.run_until_complete(m2t.retrieve_torrent())
         except FailedToFetchException:
