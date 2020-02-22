@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Added
+- Optional torrent metadata storage cache
+
+### Changed
+- DHT is a lot faster now by not doing crawls in a lock-step.
+
 ## [1.0.4] - 2020-02-19
 
 ### Changed

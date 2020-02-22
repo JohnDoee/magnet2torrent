@@ -82,3 +82,6 @@ dht_server.save_state(DHT_STATE_FILE)
 
 This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
 
+The DHT part is forked from [bmueller/kademlia](https://github.com/bmuller/kademlia/) - its license can be
+found in the dht folder or in the original project.
+

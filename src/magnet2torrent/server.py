@@ -26,7 +26,7 @@ async def get_torrent(request):
             status=400,
         )
 
-    m2t = Magnet2Torrent(magnet, dht_server=settings.DHT_SERVER)
+    m2t = Magnet2Torrent(magnet, dht_server=settings.DHT_SERVER, torrent_cache_folder=settings.TORRENT_CACHE_FOLDER)
     try:
         filename, torrent_data = await m2t.retrieve_torrent()
     except FailedToFetchException:

@@ -44,3 +44,4 @@ DHT_BOOTSTRAP_NODES = [  # TODO: make hostnames and resolve on demand
 ]
 DHT_PORT = 6881
 DHT_SERVER = None
+TORRENT_CACHE_FOLDER = None

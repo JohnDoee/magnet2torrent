@@ -3,6 +3,7 @@ import base64
 import binascii
 import logging
 from itertools import chain
+from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 from . import settings
@@ -22,11 +23,13 @@ class Magnet2Torrent:
         use_trackers=True,
         use_additional_trackers=False,
         dht_server=None,
+        torrent_cache_folder=None,
     ):
         self.magnet_link = magnet_link
         self.use_trackers = use_trackers
         self.use_additional_trackers = use_additional_trackers
         self.dht_server = dht_server
+        self.torrent_cache_folder = torrent_cache_folder
 
     def _parse_url(self):
         url = urlparse(self.magnet_link)
@@ -81,7 +84,20 @@ class Magnet2Torrent:
 
         return f"{self.name}.torrent", bencode(torrent)
 
+    @property
+    def torrent_cache_path(self):
+        if not self.torrent_cache_folder:
+            return None
+
+        filename = binascii.hexlify(self.infohash).decode('utf-8')
+        return Path(self.torrent_cache_folder) / Path(filename[:2]) / Path(filename[2:4]) / Path(filename)
+
     async def retrieve_torrent(self):
+        torrent_cache_path = self.torrent_cache_path
+        if torrent_cache_path and torrent_cache_path.exists():
+            logger.debug(f"We had a cache at {torrent_cache_path!s}")
+            return self.create_torrent(torrent_cache_path.read_bytes())
+
         task_registry = set()
         infohash = self.infohash
         tasks = []
@@ -142,6 +158,9 @@ class Magnet2Torrent:
                             if not task.done():
                                 task.cancel()
 
+                        if torrent_cache_path:
+                            torrent_cache_path.parent.mkdir(parents=True, exist_ok=True)
+                            torrent_cache_path.write_bytes(result)
                         return self.create_torrent(result)
 
         raise FailedToFetchException()
