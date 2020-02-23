@@ -105,6 +105,7 @@ class PeerSpiderCrawl(SpiderCrawl):
         self.nearest.remove(toremove)
 
     async def _return_value(self):
+        await self._queue.put([])
         return
 
 
