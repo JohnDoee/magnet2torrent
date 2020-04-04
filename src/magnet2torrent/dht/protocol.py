@@ -127,8 +127,8 @@ class KRPCProtocol(asyncio.DatagramProtocol):
         return {b"id": id}
 
     def rpc_announce_peer(
-        self, sender, id, implied_port, info_hash, port, token
-    ):  # TODO
+        self, sender, id, implied_port, info_hash, port, token, name=None
+    ):
         source = Node(id, sender[0], sender[1])
         self.welcome_if_new(source)
         if self.token_storage.verify_token(sender[0], id, info_hash, token):
