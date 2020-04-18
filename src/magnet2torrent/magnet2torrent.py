@@ -47,7 +47,7 @@ class Magnet2Torrent:
         if name:
             name = name[0]
         else:
-            name = binascii.hexlify(infohash)
+            name = binascii.hexlify(infohash).decode()
         return infohash, trackers, name
 
     @property
