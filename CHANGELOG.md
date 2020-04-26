@@ -3,11 +3,11 @@
 ## [Unreleased]
 
 ### Added
-- Possible to change DHT port and host
+- DHT support
 - Optional torrent metadata storage cache
 
 ### Changed
-- DHT is a lot faster now by not doing crawls in a lock-step.
+- Fixed bug when torrent had no name.
 
 ## [1.0.4] - 2020-02-19
 
@@ -37,4 +37,3 @@
 ## [1.0.0] - 2020-01-05
 
 Initial release
-

@@ -8,16 +8,17 @@ from base64 import b64encode
 from ipaddress import IPv4Address
 
 from ..bencode import BTFailure, bdecode, bencode
-from ..exceptions import MalformedMessage
 from .node import Node
 from .routing import RoutingTable
-from .utils import digest
 
 log = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
 # Some code taken from
 # https://github.com/bmuller/rpcudp/blob/master/rpcudp/protocol.py
 # Has same license as kademlia, see __init__.py
+
+MIN_ID = 0
+MAX_ID = 2 ** 160
 
 
 class KRPCProtocol(asyncio.DatagramProtocol):
@@ -82,14 +83,15 @@ class KRPCProtocol(asyncio.DatagramProtocol):
             func = asyncio.coroutine(func)
         args = {k.decode("utf-8"): v for (k, v) in args.items()}
         response = await func(addr, **args)
-        log.debug(
-            "sending response %s for msg id %s to %s",
-            response,
-            b64encode(transaction_id),
-            addr,
-        )
-        txdata = bencode({b"y": b"r", b"r": response,})
-        self.transport.sendto(txdata, addr)
+        if response is not None:
+            log.debug(
+                "sending response %s for msg id %s to %s",
+                response,
+                b64encode(transaction_id),
+                addr,
+            )
+            txdata = bencode({b"y": b"r", b"r": response,})
+            self.transport.sendto(txdata, addr)
 
     async def handle_response(self, transaction_id, args, addr):
         msgargs = (b64encode(transaction_id), addr)
@@ -121,15 +123,23 @@ class KRPCProtocol(asyncio.DatagramProtocol):
             ids.append(rid)
         return ids
 
+    def is_valid_node_id(self, node):
+        return MIN_ID < node.long_id < MAX_ID
+
     def rpc_ping(self, sender, id):
         source = Node(id, sender[0], sender[1])
+        if not self.is_valid_node_id(source):
+            return
         self.welcome_if_new(source)
         return {b"id": id}
 
     def rpc_announce_peer(
-        self, sender, id, implied_port, info_hash, port, token, name=None
+        self, sender, id, info_hash, port, token, name=None, implied_port=None
     ):
         source = Node(id, sender[0], sender[1])
+        if not self.is_valid_node_id(source):
+            return
+
         self.welcome_if_new(source)
         if self.token_storage.verify_token(sender[0], id, info_hash, token):
             if implied_port:
@@ -147,6 +157,9 @@ class KRPCProtocol(asyncio.DatagramProtocol):
     def rpc_find_node(self, sender, id, target, want="n4", token=None):
         log.info("finding neighbors of %i in local table", int(id.hex(), 16))
         source = Node(id, sender[0], sender[1])
+        if not self.is_valid_node_id(source):
+            return
+
         self.welcome_if_new(source)
         node = Node(target)
         neighbors = self.router.find_neighbors(node, exclude=source)
@@ -159,6 +172,8 @@ class KRPCProtocol(asyncio.DatagramProtocol):
         self, sender, id, info_hash, want="n4", noseed=0, scrape=0, bs=None
     ):
         source = Node(id, sender[0], sender[1])
+        if not self.is_valid_node_id(source):
+            return
         self.welcome_if_new(source)
         peers = self.peer_storage.get_peers(info_hash)
         token = self.token_storage.get_token(sender, id, info_hash)

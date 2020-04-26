@@ -111,10 +111,6 @@ class Server:
         # do our crawling
         await asyncio.gather(*results)
 
-        # now republish keys older than one hour
-        # for dkey, value in self.storage.iter_older_than(3600):
-        #     await self.set_digest(dkey, value)
-
     def bootstrappable_neighbors(self):
         """
         Get a :class:`list` of (ip, port) :class:`tuple` pairs suitable for
@@ -163,7 +159,7 @@ class Server:
         spider = PeerSpiderCrawl(
             self.protocol, node, nearest, self.ksize * 4, self.alpha, spider_queue
         )
-        task = asyncio.create_task(spider.find())
+        asyncio.create_task(spider.find())
 
         loop = asyncio.get_running_loop()
         cancel_task = loop.create_future()

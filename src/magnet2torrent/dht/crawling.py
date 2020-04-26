@@ -1,11 +1,9 @@
 import asyncio
 import logging
 import struct
-from collections import Counter
 from ipaddress import IPv4Address
 
 from .node import Node, NodeHeap
-from .utils import gather_dict
 
 log = logging.getLogger(__name__)  # pylint: disable=invalid-name
 

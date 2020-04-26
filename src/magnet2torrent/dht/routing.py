@@ -180,7 +180,7 @@ class RoutingTable:
         Get the index of the bucket that the given node would fall into.
         """
         for index, bucket in enumerate(self.buckets):
-            if node.long_id < bucket.range[1]:
+            if node.long_id <= bucket.range[1]:
                 return index
         # we should never be here, but make linter happy
         return None
