@@ -70,6 +70,8 @@ class KBucket:
             if node.id in self.replacement_nodes:
                 del self.replacement_nodes[node.id]
             self.replacement_nodes[node.id] = node
+            while len(self.replacement_nodes) > self.ksize * 2:
+                self.replacement_nodes.popitem(last=False)
             return False
         return True
 
