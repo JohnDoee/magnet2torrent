@@ -162,6 +162,8 @@ class KRPCProtocol(asyncio.DatagramProtocol):
 
         self.welcome_if_new(source)
         node = Node(target)
+        if not self.is_valid_node_id(node):
+            return
         neighbors = self.router.find_neighbors(node, exclude=source)
         data = {b"id": id, b"nodes": b"".join([n.packed for n in neighbors])}
         if token:
