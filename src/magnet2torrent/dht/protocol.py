@@ -134,7 +134,7 @@ class KRPCProtocol(asyncio.DatagramProtocol):
         return {b"id": id}
 
     def rpc_announce_peer(
-        self, sender, id, info_hash, port, token, name=None, implied_port=None
+        self, sender, id, info_hash, port, token, name=None, implied_port=None, seed=None
     ):
         source = Node(id, sender[0], sender[1])
         if not self.is_valid_node_id(source):
