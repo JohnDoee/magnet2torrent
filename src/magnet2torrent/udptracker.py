@@ -55,23 +55,31 @@ class TrackerUDPProtocol(asyncio.DatagramProtocol):
 
     async def _handle_response(self, data, addr):
         if self.state == "connect":
-            if len(data) != 16:
+            fmt_header = "!iIq"
+            if len(data) != struct.calcsize(fmt_header):
                 logger.warning("Wrong stuff returned on connect")
                 return
-            action, transaction_id, connection_id = struct.unpack("!iIq", data)
+            action, transaction_id, connection_id = struct.unpack(fmt_header, data)
             self.connection_id = connection_id
             self.state = "announce"
             self.send_announce()
         elif self.state == "announce":
+            fmt_header = "!iIiii"
+            header_size = struct.calcsize(fmt_header)
+            if len(data) < header_size:
+                logger.warning("Wrong stuff returned on announce")
+                return
             action, transaction_id, interval, leechers, seeders = struct.unpack(
-                "!iIiii", data[:20]
+                fmt_header, data[:header_size]
             )
-            peer_data = data[20:]
+            peer_data = data[header_size:]
             peers = []
-            while len(peer_data) >= 6:
-                peer_ip, peer_port = struct.unpack("!IH", peer_data[:6])
+            fmt_peer = "!IH"
+            peer_size = struct.calcsize(fmt_peer)
+            while len(peer_data) >= peer_size:
+                peer_ip, peer_port = struct.unpack(fmt_peer, peer_data[:peer_size])
                 peers.append((IPv4Address(peer_ip), peer_port))
-                peer_data = peer_data[6:]
+                peer_data = peer_data[peer_size:]
 
             if not self.cb.done():
                 self.cb.set_result(
