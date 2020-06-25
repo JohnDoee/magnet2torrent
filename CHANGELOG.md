@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.1.1] - 2020-06-25
+
+### Bugfix
+- Fixed bug related to short UDP messages in response from UDP tracker #4 - Thanks to hph86
+
 ## [1.1.0] - 2020-05-07
 
 ### Added
