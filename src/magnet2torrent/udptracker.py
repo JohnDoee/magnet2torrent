@@ -66,6 +66,9 @@ class TrackerUDPProtocol(asyncio.DatagramProtocol):
         elif self.state == "announce":
             fmt_header = "!iIiii"
             header_size = struct.calcsize(fmt_header)
+            if len(data) < header_size:
+                logger.warning("Wrong stuff returned on announce")
+                return
             action, transaction_id, interval, leechers, seeders = struct.unpack(
                 fmt_header, data[:header_size]
             )
