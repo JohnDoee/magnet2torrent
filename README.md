@@ -30,6 +30,11 @@ Run it as an HTTP server with lots of features enabled.
 
 ```bash
 magnet2torrent --use-dht --dht-state-file dht.state --torrent-cache-folder torcache serve --apikey secretkey
+
+# try to fetch a torrent from the running server
+# The response is json encoded and contains either the torrent or an error about it
+curl "http://127.0.0.1:18667/?apikey=secretkey&magnet=magnet%3A%3Fxt%3Durn%3Abtih%3Ae2467cbf021192c241367b892230dc1e05c0580e%26dn%3Dubuntu-19.10-desktop-amd64.iso%26tr%3Dhttps%253A%252F%252Ftorrent.ubuntu.com%252Fannounce%26tr%3Dhttps%253A%252F%252Fipv6.torrent.ubuntu.com%252Fannounce"
+# it will return {"status": "success", "filename": "ubuntu-19.10-desktop-amd64.iso.torrent", "torrent_data": "... base64 encoded torrent data ..."}
 ```
 
 Use from python
