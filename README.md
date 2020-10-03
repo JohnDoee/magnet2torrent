@@ -88,6 +88,19 @@ asyncio.run(fetch_that_torrent(dht_server))
 dht_server.save_state(DHT_STATE_FILE)
 ```
 
+## Attacks on DHT
+
+There are a number of attacks against Bittorrent DHT going on permanently.
+They have a variety of goals like trying to find new content on the DHT or just disrupt its operation.
+
+One specific affects magnet2torrent, the "i am the peer for this" and then give back zero peers or just itself.
+This attack kinda short circuits the attempt to find a torrent.
+It mostly happen with low-peer torrents and when only the DHT got peers so it will be a bit uncommon.
+
+The question I'm trying to answer here is "why can deluge/qbittorrent/picotorret etc. find a torrent when this library cannot".
+And that's probably why, libtorrent-rasterbar is smarter about it.
+
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
