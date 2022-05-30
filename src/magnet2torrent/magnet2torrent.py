@@ -115,7 +115,7 @@ class Magnet2Torrent:
                 logger.debug(f"Trying to fetch peers from {tracker}")
                 tracker_url = urlparse(tracker)
                 if tracker_url.scheme in ["http", "https"]:
-                    task = retrieve_peers_http_tracker(task_registry, tracker, infohash)
+                    task = retrieve_peers_http_tracker(task_registry, tracker, infohash, logger)
                 elif tracker_url.scheme in ["udp"]:
                     host, port = tracker_url.netloc.split(":")
                     task = retrieve_peers_udp_tracker(
@@ -168,4 +168,4 @@ class Magnet2Torrent:
                             torrent_cache_path.write_bytes(result)
                         return self.create_torrent(result)
 
-        raise FailedToFetchException()
+        raise FailedToFetchException('Failed to get torrent file')
