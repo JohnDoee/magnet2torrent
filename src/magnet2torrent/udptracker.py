@@ -94,7 +94,7 @@ async def retrieve_peers_udp_tracker(task_registry, host, port, tracker, infohas
         transport, protocol = await loop.create_datagram_endpoint(
             lambda: TrackerUDPProtocol(cb, infohash), remote_addr=(host, port)
         )
-    except socket.gaierror:
+    except (socket.gaierror, OSError):
         return tracker, {"seeders": 0, "leechers": 0, "peers": []}
     try:
         task = asyncio.ensure_future(cb)
