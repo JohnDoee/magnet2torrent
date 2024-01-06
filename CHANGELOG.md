@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.2.0] - 2024-01-06
+
+### Changed
+- Removed PY2 support and Six
+- Changed aiohttp version dependency to be more free
+
+### Bugfix
+- Fixed bug related to bencode / http tracker and how it handles invalid bencoded string
+
 ## [1.1.1] - 2020-06-25
 
 ### Bugfix

@@ -7,7 +7,7 @@ import aiohttp
 from yarl import URL
 
 from . import settings
-from .bencode import bdecode
+from .bencode import bdecode, BTFailure
 
 
 async def retrieve_peers_http_tracker(task_registry, tracker, infohash):
@@ -32,8 +32,12 @@ async def retrieve_peers_http_tracker(task_registry, tracker, infohash):
     if failed:
         return tracker, {"seeders": 0, "leechers": 0, "peers": []}
 
-    result = bdecode(result)
-    if b"failure reason" in result:
+    try:
+        result = bdecode(result)
+    except BTFailure:
+        failed = True
+
+    if failed or b"failure reason" in result:
         return tracker, {"seeders": 0, "leechers": 0, "peers": []}
 
     peer_data = result[b"peers"]
