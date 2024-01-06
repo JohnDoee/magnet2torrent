@@ -21,7 +21,7 @@ setup(
     include_package_data=True,
     install_requires=["aiohttp==3.*", "expiringdict>=1.2.0"],
     classifiers=[
-        "Development Status :: 2 - Beta",
+        "Development Status :: 4 - Beta",
         "Environment :: Web Environment",
         "Intended Audience :: End Users/Desktop",
         "License :: OSI Approved :: MIT License",
