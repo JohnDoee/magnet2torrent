@@ -8,7 +8,7 @@ def readme():
 
 setup(
     name="magnet2torrent",
-    version="1.2.0",
+    version="1.2.1",
     url="https://github.com/JohnDoee/magnet2torrent",
     author="Anders Jensen",
     author_email="andersandjensen@gmail.com",

@@ -117,6 +117,8 @@ class Magnet2Torrent:
                 if tracker_url.scheme in ["http", "https"]:
                     task = retrieve_peers_http_tracker(task_registry, tracker, infohash)
                 elif tracker_url.scheme in ["udp"]:
+                    if ":"  not in tracker_url.netloc:
+                        continue
                     host, port = tracker_url.netloc.split(":")
                     task = retrieve_peers_udp_tracker(
                         task_registry, host, port, tracker, infohash

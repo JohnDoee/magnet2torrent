@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.2.1] - 2024-01-11
+
+### Bugfix
+- Fixed bug related to UDP trackers missing port
+
 ## [1.2.0] - 2024-01-06
 
 ### Changed
