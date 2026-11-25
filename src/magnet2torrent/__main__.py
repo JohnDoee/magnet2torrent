@@ -92,9 +92,12 @@ def main():
             format="%(asctime)-15s:%(levelname)s:%(name)s:%(lineno)d:%(message)s",
         )
 
+    # asyncio.get_event_loop() no longer creates a loop (error on Python 3.14)
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
     if args.use_dht:
         print("Bootstrapping DHT server")
-        loop = asyncio.get_event_loop()
         dht_server = DHTServer()
 
         if args.dht_state_file and os.path.isfile(args.dht_state_file):
@@ -126,7 +129,6 @@ def main():
         app.add_routes(routes)
         web.run_app(app, host=str(args.ip), port=args.port)
     elif args.command == "fetch":
-        loop = asyncio.get_event_loop()
         m2t = Magnet2Torrent(
             args.magnet,
             dht_server=dht_server,

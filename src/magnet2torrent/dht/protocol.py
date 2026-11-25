@@ -79,10 +79,10 @@ class KRPCProtocol(asyncio.DatagramProtocol):
             log.info("%s has no callable method " "rpc_%s; ignoring request", *msgargs)
             return
 
-        if not asyncio.iscoroutinefunction(func):
-            func = asyncio.coroutine(func)
         args = {k.decode("utf-8"): v for (k, v) in args.items()}
-        response = await func(addr, **args)
+        response = func(addr, **args)
+        if asyncio.iscoroutine(response):
+            response = await response
         if response is not None:
             log.debug(
                 "sending response %s for msg id %s to %s",
